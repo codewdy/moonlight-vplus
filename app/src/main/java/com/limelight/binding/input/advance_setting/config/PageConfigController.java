@@ -136,7 +136,7 @@ public class PageConfigController {
                         }
                         controllerManager.getSuperConfigDatabaseHelper().deleteConfig(currentConfigId);
                         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-                        editor.putLong(CURRENT_CONFIG_KEY,0L);
+                        editor.putLong(getCurrentConfigKey(),0L);
                         editor.apply();
                         loadAllConfigToSpinner();
                         loadCurrentConfig();
@@ -199,6 +199,7 @@ public class PageConfigController {
                 configNames
         );
         adapter.setDropDownViewResource(R.layout.crown_spinner_item);
+        configSelectSpinner.setOnItemSelectedListener(null);
         configSelectSpinner.setAdapter(adapter);
 
     }
@@ -210,7 +211,7 @@ public class PageConfigController {
             return;
         }
         PreferenceManager.getDefaultSharedPreferences(context).edit()
-                .putLong(CURRENT_CONFIG_KEY, targetId).apply();
+                .putLong(getCurrentConfigKey(), targetId).apply();
         initConfig();
     }
 
@@ -222,9 +223,26 @@ public class PageConfigController {
         return targets;
     }
 
+    private String getCurrentConfigKey() {
+        if (context instanceof Game) {
+            android.content.Intent intent = ((Game) context).getIntent();
+            String host = intent.getStringExtra(Game.Companion.getEXTRA_PC_UUID());
+            int appId = intent.getIntExtra(Game.Companion.getEXTRA_APP_ID(), -1);
+            if (host != null && !host.isEmpty() && appId > 0) {
+                return CURRENT_CONFIG_KEY + ":" + host + ":" + appId;
+            }
+        }
+        return CURRENT_CONFIG_KEY;
+    }
+
     private void loadCurrentConfig(){
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-        currentConfigId = sharedPreferences.getLong(CURRENT_CONFIG_KEY,0L);
+        // Preserve the existing selection for games without a saved preference yet.
+        String selectionKey = getCurrentConfigKey();
+        currentConfigId = sharedPreferences.getLong(selectionKey,
+                sharedPreferences.getLong(CURRENT_CONFIG_KEY, 0L));
+        if (!configIds.contains(currentConfigId)) currentConfigId = 0L;
+        sharedPreferences.edit().putLong(selectionKey, currentConfigId).apply();
         //spinner选中
         for (int i = 0;i < configIds.size();i ++){
             if (currentConfigId.equals(configIds.get(i))){
@@ -235,7 +253,7 @@ public class PageConfigController {
                     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                         Long configId = configIds.get(position);
                         SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(context).edit();
-                        editor.putLong(CURRENT_CONFIG_KEY,configId);
+                        editor.putLong(getCurrentConfigKey(),configId);
                         editor.apply();
                         if (!configId.equals(currentConfigId)){
                             loadCurrentConfig();

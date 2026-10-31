@@ -1554,17 +1554,8 @@ public class ElementController {
                                         Long newConfigId = configIds.get(which);
                                         String newName = configNames.get(which);
 
-                                        // 保存到首选项
-                                        PreferenceManager.getDefaultSharedPreferences(context)
-                                                .edit()
-                                                .putLong("current_config_id", newConfigId)
-                                                .apply();
-
-                                        // 刷新配置与元素
-                                        try {
-                                            controllerManager.getPageConfigController().initConfig();
-                                        } catch (Exception ignored) {}
-                                        loadAllElement(newConfigId);
+                                        controllerManager.getPageConfigController()
+                                                .switchDirectlyToConfig(newConfigId);
 
                                         showToast(context.getString(R.string.toast_switched_to_config, newName));
                                     }
