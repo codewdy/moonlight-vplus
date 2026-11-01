@@ -2472,7 +2472,7 @@ class Game : ThemedComponentActivity(), SurfaceHolder.Callback,
             }
         }
         screenDs5TouchpadHostSupport = ScreenDs5HostSupport.UNKNOWN
-        controllerHandler.retryPendingControllerArrivals {
+        controllerHandler.retryPendingControllerArrivals(initializeConnectedControllers = true) {
             if (prefConfig.screenDs5Touchpad) {
                 // Retries run first so pending arrivals populate the metadata cache;
                 // the DS5 declaration then re-declares slot 0 with DualSense capabilities.

@@ -1427,24 +1427,55 @@ class ControllerHandler(
         }
     }
 
-    internal fun retryPendingControllerArrivals(afterRetry: (() -> Unit)? = null) {
+    internal fun retryPendingControllerArrivals(
+        initializeConnectedControllers: Boolean = false,
+        afterRetry: (() -> Unit)? = null,
+    ) {
         mainThreadHandler.post {
             if (stopped) {
                 return@post
             }
 
+            if (initializeConnectedControllers) {
+                // Discover even pads without rumble: their contexts otherwise only
+                // exist after the first input event. Preserve USB forwarding ownership.
+                for (deviceId in inputManager.inputDeviceIds) {
+                    val device = inputManager.getInputDevice(deviceId) ?: continue
+                    if (!hasJoystickAxes(device) || isUsbForwarded(device)) continue
+                    if (inputDeviceContexts.get(deviceId) == null) {
+                        updateInputDeviceContext(deviceId, createInputDeviceContextForDevice(device))
+                    }
+                }
+            }
+
             for (i in 0 until inputDeviceContexts.size()) {
                 val context = inputDeviceContexts.valueAt(i)
+                if (!isContextUsable(context)) continue
                 if (!context.assignedControllerNumber &&
-                    context.directDualSenseBluetoothOutput != null
+                    (initializeConnectedControllers || context.directDualSenseBluetoothOutput != null)
                 ) {
                     assignControllerNumberIfNeeded(context)
                 }
                 if (context.assignedControllerNumber &&
-                    !context.controllerArrival.isReported &&
+                    (initializeConnectedControllers || !context.controllerArrival.isReported) &&
                     reportControllerArrival(context)
                 ) {
                     sendControllerInputPacket(context)
+                }
+            }
+
+            if (initializeConnectedControllers &&
+                (prefConfig.onscreenController || prefConfig.enableCrownFeatures || prefConfig.screenDs5Touchpad)
+            ) {
+                synchronized(arrivalMetadataLock) {
+                    if (isControllerSlotEnabled(0)) {
+                        // Reuse physical-pad metadata when player 1 is shared with
+                        // screen controls; never downgrade an already declared pad.
+                        val metadata = controllerArrivalMetadata[0] ?: ControllerArrivalMetadata(
+                            MoonBridge.LI_CTYPE_XBOX, STANDARD_GAMEPAD_BUTTON_FLAGS, 0)
+                        controllerArrivalMetadata[0] = metadata
+                        sendControllerArrivalMetadataLocked(0, metadata)
+                    }
                 }
             }
 
