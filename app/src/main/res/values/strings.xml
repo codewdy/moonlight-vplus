@@ -2426,4 +2426,8 @@ Tap again to replace it.</string>
     <string name="summary_ds5_simulation_mode">Legacy keeps the existing rumble feel. Enhanced IR separates continuous vibration and short impacts. Requires compatible Sunshine with DualSense emulation on the host. Native controller passthrough takes priority. Reconnect to apply.</string>
     <string-array name="ds5_simulation_mode_names"><item>Legacy simulation</item><item>Enhanced IR</item></string-array>
     <string-array name="ds5_simulation_mode_values" translatable="false"><item>legacy</item><item>ir_v3</item></string-array>
+    <string name="crown_clone_config">Clone profile</string>
+    <string name="crown_clone_suffix">" - Copy"</string>
+    <string name="crown_clone_name_required">Enter a profile name</string>
+    <string name="crown_clone_failed">Could not clone profile</string>
 </resources>

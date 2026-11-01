@@ -293,6 +293,19 @@
             android:tint="@color/crown_text_primary" />
 
         <ImageButton
+            android:id="@+id/clone_config_button"
+            android:layout_width="32dp"
+            android:layout_height="match_parent"
+            android:layout_marginHorizontal="2dp"
+            android:background="@drawable/crown_action_icon_button_bg"
+            android:contentDescription="@string/crown_clone_config"
+            android:tooltipText="@string/crown_clone_config"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/crown_action_copy"
+            android:tint="@color/crown_text_primary" />
+
+        <ImageButton
             android:id="@+id/rename_config_button"
             android:layout_width="32dp"
             android:layout_height="match_parent"

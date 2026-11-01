@@ -262,6 +262,39 @@ class SuperConfigDatabaseHelper(context: Context?) :
         notifyConfigSyncChanged()
     }
 
+    /** Copy all columns atomically; element IDs and references are profile-local. */
+    fun cloneConfig(sourceId: Long, name: String): Long {
+        val db = writableDataBase
+        var targetId = System.currentTimeMillis()
+        db.beginTransaction()
+        try {
+            val ids = queryAllConfigIds()
+            require(sourceId in ids) { "Source profile no longer exists" }
+            while (targetId in ids || targetId <= 0L) targetId++
+            for (table in listOf("config", "element")) {
+                val rows = db.query(table, null, "config_id = ?", arrayOf(sourceId.toString()),
+                    null, null, null).use { cursor ->
+                    buildList {
+                        while (cursor.moveToNext()) {
+                            val values = ContentValues()
+                            android.database.DatabaseUtils.cursorRowToContentValues(cursor, values)
+                            values.remove("_id")
+                            values.put("config_id", targetId)
+                            if (table == "config") values.put("config_name", name)
+                            add(values)
+                        }
+                    }
+                }
+                for (row in rows) db.insertOrThrow(table, null, row)
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+        notifyConfigSyncChanged()
+        return targetId
+    }
+
     fun deleteConfig(configId: Long) {
         val args = arrayOf(configId.toString())
         writableDataBase.delete("config", "config_id = ?", args)

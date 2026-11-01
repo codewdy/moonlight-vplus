@@ -110,6 +110,7 @@ public class PageConfigController {
                 controllerManager.getSuperPagesController().openNewPage(pageWindow);
             }
         });
+        pageConfig.findViewById(R.id.clone_config_button).setOnClickListener(v -> openCloneDialog());
         //重命名布局按钮
         pageConfig.findViewById(R.id.rename_config_button).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -489,6 +490,35 @@ public class PageConfigController {
     /**
      * 打开重命名当前配置的对话框
      */
+    public void openCloneDialog() {
+        final long sourceId = currentConfigId;
+        SuperPageLayout window = (SuperPageLayout) LayoutInflater.from(context).inflate(R.layout.page_window, null);
+        ((TextView) window.findViewById(R.id.window_title)).setText(getCrownDialogTitle(R.string.crown_clone_config));
+        EditText input = window.findViewById(R.id.window_edittext);
+        input.setText(configSelectSpinner.getSelectedItem().toString() + context.getString(R.string.crown_clone_suffix));
+        input.setSelection(input.length());
+        window.findViewById(R.id.window_cancel).setOnClickListener(v -> returnPrePage(window.getLastPage()));
+        window.findViewById(R.id.window_confirm).setOnClickListener(v -> {
+            String name = input.getText().toString().trim();
+            if (name.isEmpty()) {
+                input.setError(context.getString(R.string.crown_clone_name_required));
+                return;
+            }
+            final long targetId;
+            try {
+                targetId = controllerManager.getSuperConfigDatabaseHelper().cloneConfig(sourceId, name);
+            } catch (RuntimeException error) {
+                Toast.makeText(context, R.string.crown_clone_failed, Toast.LENGTH_LONG).show();
+                return;
+            }
+            PreferenceManager.getDefaultSharedPreferences(context).edit()
+                    .putLong(getCurrentConfigKey(), targetId).apply();
+            returnPrePage(window.getLastPage());
+            initConfig();
+        });
+        controllerManager.getSuperPagesController().openNewPage(window);
+    }
+
     public void openRenameDialog() {
         SuperPageLayout pageWindow = (SuperPageLayout) LayoutInflater.from(context).inflate(R.layout.page_window,null);
         TextView title = pageWindow.findViewById(R.id.window_title);
